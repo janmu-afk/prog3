@@ -5,6 +5,7 @@ import utils.Util;
 public class Main {
 
     public static void main(String[] args) throws IOException{
+        long start = System.currentTimeMillis();
 
         // prereqs
         int maxDepth = 4;
@@ -15,7 +16,7 @@ public class Main {
         // 2. build the BAYC set
         HashSet<String> BAYCSet = Util.makeBAYC("data/boredapeyachtclub.csv");
         
-        // 3. build ETN chunk as an adjacency list (implementation dependent)
+        // 3. build ETN chunk as an adjacency list
         HashMap<String, HashSet<String>> ETNChunk = new HashMap<>();
         // open CSV
         BufferedReader reader = new BufferedReader(new FileReader("data/prog3ETNsample.csv"));
@@ -37,7 +38,6 @@ public class Main {
         }
         reader.close();
         
-        long start = System.currentTimeMillis();
         // 4. build the linkability network (implementation dependent)
         // address, mapped to multiple addresses with distance weights
         HashMap<String, HashMap<String, Integer>> linkabilityNetwork = new HashMap<>();
@@ -83,8 +83,7 @@ public class Main {
                 }
             }
         }
-        long end = System.currentTimeMillis();
-        System.out.println("\n" + (end - start) + "ms");
+        
 
         // 5. writing to a csv file
         //get the current timestamp for the filename
@@ -104,6 +103,9 @@ public class Main {
         } catch(Exception e) {
             System.out.println(e);
         }
+
+        long end = System.currentTimeMillis();
+        System.out.println("\n" + (end - start) + "ms");
 
     }
 }

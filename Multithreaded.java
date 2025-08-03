@@ -6,7 +6,9 @@ import utils.Util;
 
 public class Multithreaded {
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
 
+        
         // prereqs
         int threadCount = Runtime.getRuntime().availableProcessors();
         int maxDepth = 4;
@@ -17,7 +19,7 @@ public class Multithreaded {
         // 2. build the BAYC set
         HashSet<String> BAYCSet = Util.makeBAYC("data/boredapeyachtclub.csv");
 
-        // 3. build ETN chunk as an adjacency list (implementation dependent)
+        // 3. build ETN chunk as an adjacency list
         // not parallelized because of disk I/O
         HashMap<String, HashSet<String>> etnChunk = new HashMap<>();
         // open CSV
@@ -40,7 +42,6 @@ public class Multithreaded {
         }
         reader.close();
 
-        long start = System.currentTimeMillis();
         //4. build the linkability network (implementation dependent)
         // each thread works with part of the BAYC set
         // create thread pool
@@ -74,9 +75,6 @@ public class Multithreaded {
         // good practice :)
         executor.shutdown();
 
-        long end = System.currentTimeMillis();
-        System.out.println("\n" + (end - start) + "ms");
-
         // 5. writing to a csv file
         //get the current timestamp for the filename
         long unixTimestamp = System.currentTimeMillis() / 1000L;
@@ -95,5 +93,7 @@ public class Multithreaded {
         } catch(Exception e) {
             System.out.println(e);
         }
+        long end = System.currentTimeMillis();
+        System.out.println("\n" + (end - start) + "ms");
     }
 }

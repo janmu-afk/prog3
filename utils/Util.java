@@ -2,6 +2,8 @@ package utils;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class Util {
     // this function takes the BAYC dataset and converts it into a HashSet
@@ -57,5 +59,25 @@ public class Util {
         }
 
         return sets;
+    }
+
+    // serializes an object (only used on hashmaps and hashsets) into a byte array
+    public static byte[] serialize(Object obj) throws IOException {
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        GZIPOutputStream gzipOut = new GZIPOutputStream(byteOut);
+        ObjectOutputStream out = new ObjectOutputStream(gzipOut);
+        out.writeObject(obj);
+        out.close(); // this also closes gzipOut
+        return byteOut.toByteArray();
+    }
+
+    // serializes a byte array into an object (only used on hashmaps and hashsets)
+    public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
+        GZIPInputStream gzipIn = new GZIPInputStream(byteIn);
+        ObjectInputStream in = new ObjectInputStream(gzipIn);
+        Object obj = in.readObject();
+        in.close();
+        return obj;
     }
 }
