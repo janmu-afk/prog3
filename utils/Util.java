@@ -1,12 +1,10 @@
 package utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashSet;
+import java.io.*;
+import java.util.*;
 
 public class Util {
+    // this function takes the BAYC dataset and converts it into a HashSet
     public static HashSet<String> makeBAYC (String file) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line = "";
@@ -22,6 +20,7 @@ public class Util {
         return bayc;
     }
 
+    // conversion of a folder of blacklist .json files into a HashSet
     public static HashSet<String> makeBlacklist(String folderName) throws IOException {
         HashSet<String> blklist = new HashSet<>();
         // several files in the folder
@@ -41,5 +40,22 @@ public class Util {
             reader.close();
         }
         return blklist;
+    }
+
+    // taking a set and splitting it into a list of sets
+    public static ArrayList<HashSet<String>> setSplit(HashSet<String> set, int count) {
+        ArrayList<HashSet<String>> sets = new ArrayList<>();
+        // conversion for easier processing
+        ArrayList<String> list = new ArrayList<>(set);
+        int size = list.size() / count;
+
+        for (int i = 0; i < count; i++) {
+            int start = i * size;
+            // if true, end of list, else multiplied by current index
+            int end = (i == count - 1) ? list.size() : (i + 1) * size;
+            sets.add(new HashSet<>(list.subList(start, end)));
+        }
+
+        return sets;
     }
 }

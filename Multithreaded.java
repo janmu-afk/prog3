@@ -1,22 +1,25 @@
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
+
 import utils.Util;
 
-public class Main {
-
-    public static void main(String[] args) throws IOException{
+public class Multithreaded {
+    public static void main(String[] args) throws IOException {
 
         // prereqs
+        int threadCount = Runtime.getRuntime().availableProcessors();
         int maxDepth = 4;
-        // presumed singlethreaded
+        // presumed multithreaded
         // 1. build the blacklist set
         HashSet<String> blklistSet = Util.makeBlacklist("data/blacklist");
 
         // 2. build the BAYC set
         HashSet<String> BAYCSet = Util.makeBAYC("data/boredapeyachtclub.csv");
-        
+
         // 3. build ETN chunk as an adjacency list (implementation dependent)
-        HashMap<String, HashSet<String>> ETNChunk = new HashMap<>();
+        // not parallelized because of disk I/O
+        HashMap<String, HashSet<String>> etnChunk = new HashMap<>();
         // open CSV
         BufferedReader reader = new BufferedReader(new FileReader("data/prog3ETNsample.csv"));
         String line = "";
@@ -29,60 +32,48 @@ public class Main {
             // is either of the columns in the blacklist?
             if (blklistSet.contains(from) || blklistSet.contains(to)) continue;
             // if true, add the from column and create an array list for it (if absent)
-            ETNChunk.computeIfAbsent(from, k -> new HashSet<>());
+            etnChunk.computeIfAbsent(from, k -> new HashSet<>());
             // add the to column to the from key (if absent)
-            if (!ETNChunk.get(from).contains(to)) {
-                ETNChunk.get(from).add(to);
+            if (!etnChunk.get(from).contains(to)) {
+                etnChunk.get(from).add(to);
             }
         }
         reader.close();
-        
+
         long start = System.currentTimeMillis();
-        // 4. build the linkability network (implementation dependent)
-        // address, mapped to multiple addresses with distance weights
+        //4. build the linkability network (implementation dependent)
+        // each thread works with part of the BAYC set
+        // create thread pool
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        // prepare a list of future linkability network chunks
+        ArrayList<Future<HashMap<String, HashMap<String, Integer>>>> futures = new ArrayList<>();
+
+        // do the partitioning and add to future list for tasks
+        ArrayList<HashSet<String>> chunks = Util.setSplit(BAYCSet, threadCount);
+        for (HashSet<String> chunk : chunks) {
+            futures.add(executor.submit(new LinkNetBuilder(chunk, BAYCSet, etnChunk, blklistSet, maxDepth)));
+        }
+
+        // merge the linkability network chunks
         HashMap<String, HashMap<String, Integer>> linkabilityNetwork = new HashMap<>();
-        // iterate through the BAYC set
-        for (String entry : BAYCSet) {
-            // we have to purge the BAYC addresses too
-            if (blklistSet.contains(entry)) continue;
-            // create a queue, its depth and visited nodes (it's better to be explicit about parametrized structs)
-            LinkedList<String> queue = new LinkedList<>();
-            HashMap<String, Integer> depth = new HashMap<>();
-            HashSet<String> visited = new HashSet<>();
+        for (Future<HashMap<String, HashMap<String, Integer>>> future : futures) {
 
-            queue.add(entry);
-            depth.put(entry, 0);
-            visited.add(entry);
-            // main part of the traversal
-            while (!queue.isEmpty()) {
-                // get the next address
-                String current = queue.poll();
-                int currDepth = depth.get(current);
-
-                // depth check
-                if (currDepth == maxDepth) continue;
-
-                // fetch neighbors
-                HashSet<String> neighbors = ETNChunk.getOrDefault(current, new HashSet<String>());
-
-                // for each neighbor, unless visited, visit
-                for (String neighbor : neighbors) {
-                    if (visited.contains(neighbor)) continue;
-                    if (blklistSet.contains(neighbor)) continue;
-
-                    int nextDepth = currDepth + 1;
-                    depth.put(neighbor, nextDepth);
-                    visited.add(neighbor);
-                    queue.add(neighbor);
-
-                    if (BAYCSet.contains(neighbor) && !neighbor.equals(entry)) {
-                        linkabilityNetwork
-                            .computeIfAbsent(entry, k -> new HashMap<>())
-                            .put(neighbor, nextDepth); // overwrite with shortest path
-                    }
-                }
+            //bad practice, I know
+            HashMap<String, HashMap<String, Integer>> partial = null;
+            // acquire futures - this is necessary to prevent the compiler from whining
+            try { partial = future.get(); } catch(Exception e) {System.out.println(e);}
+            
+            // append to final structure
+            for (HashMap.Entry<String, HashMap<String, Integer>> entry : partial.entrySet()) {
+                linkabilityNetwork
+                    .computeIfAbsent(entry.getKey(), k -> new HashMap<>())
+                    .putAll(entry.getValue());
             }
         }
+
+        // good practice :)
+        executor.shutdown();
+
         long end = System.currentTimeMillis();
         System.out.println("\n" + (end - start) + "ms");
 
@@ -104,6 +95,5 @@ public class Main {
         } catch(Exception e) {
             System.out.println(e);
         }
-
     }
 }
