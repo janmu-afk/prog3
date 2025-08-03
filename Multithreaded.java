@@ -10,8 +10,9 @@ public class Multithreaded {
 
         
         // prereqs
-        int threadCount = Runtime.getRuntime().availableProcessors();
-        int maxDepth = 4;
+        int threadCount = Runtime.getRuntime().availableProcessors() - 2; // let's not overload things
+        int maxDepth = Integer.parseInt(args[0]);
+        System.out.println("\nrunning multi at " + maxDepth + " depth with " + threadCount +" threads\n");
         // presumed multithreaded
         // 1. build the blacklist set
         HashSet<String> blklistSet = Util.makeBlacklist("data/blacklist");

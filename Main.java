@@ -8,7 +8,8 @@ public class Main {
         long start = System.currentTimeMillis();
 
         // prereqs
-        int maxDepth = 4;
+        int maxDepth = Integer.parseInt(args[0]);
+        System.out.println("\nrunning single at " + maxDepth + " depth\n");
         // presumed singlethreaded
         // 1. build the blacklist set
         HashSet<String> blklistSet = Util.makeBlacklist("data/blacklist");

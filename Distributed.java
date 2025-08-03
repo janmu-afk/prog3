@@ -16,6 +16,7 @@ public class Distributed {
 
         // prereqs
         int maxDepth = 4;
+        if (rank == 0) System.out.println("\nrunning distrib at " + maxDepth + " depth\n");
         // presumed distributed
         HashSet<String> blklistSet, BAYCSet = null, localBAYC;
         // 1. build the blacklist set
@@ -42,9 +43,6 @@ public class Distributed {
             // I would rather compromise the integrity of the code than compromise my sanity
             blklistSet = (HashSet<String>) Util.deserialize(blkBytes);
         }
-
-
-        if (rank == 0) System.out.println("stage 1 complete");
         
         
         // 2. build the BAYC set
@@ -68,7 +66,7 @@ public class Distributed {
                 MPI.COMM_WORLD.Send(serialized, 0, serialized.length, MPI.BYTE, i, 1);
             }
 
-            // node 0 specific
+            // master node specific
             int end = Math.min(perNode, total);
             localBAYC = new HashSet<>(baycList.subList(0, end));
         } else {
@@ -233,6 +231,8 @@ public class Distributed {
             endTimer = System.currentTimeMillis();
             System.out.println("\n" + (endTimer - startTimer) + "ms");
         }
+
+        MPI.Finalize();
 
     }
 }
